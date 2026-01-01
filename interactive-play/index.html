@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lulu the Gourd · Interactive Play</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f7f9f6;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 32px;
+    }
+
+    .group {
+      margin-bottom: 28px;
+    }
+
+    .options {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .option {
+      padding: 14px 20px;
+      border-radius: 20px;
+      border: none;
+      background: #eee;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .option.selected {
+      background: #cfe9e2;
+      font-weight: 600;
+    }
+
+    #continueBtn {
+      margin-top: 32px;
+      padding: 16px 32px;
+      border-radius: 30px;
+      border: none;
+      background: #ccc;
+      font-size: 16px;
+      cursor: not-allowed;
+    }
+
+    #continueBtn.enabled {
+      background: #7fcac0;
+      cursor: pointer;
+    }
+
+    #output {
+      margin-top: 50px;
+      padding: 24px;
+      background: #fff;
+      border-radius: 16px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Shape today’s story</h1>
+    <div class="subtitle">让故事更像今天的你</div>
+
+    <div class="group" data-key="age">
+      <h3>Age 年龄</h3>
+      <div class="options">
+        <button class="option" data-value="3-5">3–5</button>
+        <button class="option" data-value="6-8">6–8</button>
+        <button class="option" data-value="9-11">9–11</button>
+      </div>
+    </div>
+
+    <div class="group" data-key="mood">
+      <h3>Mood 心情</h3>
+      <div class="options">
+        <button class="option" data-value="exploring">📚 Exploring</button>
+        <button class="option" data-value="friends">🧡 Friends</button>
+        <button class="option" data-value="imagining">✨ Imagining</button>
+      </div>
+    </div>
+
+    <div class="group" data-key="color">
+      <h3>Color 氛围</h3>
+      <div class="options">
+        <button class="option" data-value="green">💚 Green</button>
+        <button class="option" data-value="blue">💙 Blue</button>
+        <button class="option" data-value="yellow">💛 Yellow</button>
+      </div>
+    </div>
+
+    <button id="continueBtn">Create Story</button>
+
+    <div id="output" class="hidden"></div>
+  </div>
+
+  <script>
+    const state = { age: null, mood: null, color: null };
+    const btn = document.getElementById("continueBtn");
+    const output = document.getElementById("output");
+
+    document.querySelectorAll(".group").forEach(group => {
+      const key = group.dataset.key;
+      group.querySelectorAll(".option").forEach(opt => {
+        opt.onclick = () => {
+          group.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+          opt.classList.add("selected");
+          state[key] = opt.dataset.value;
+          checkReady();
+        };
+      });
+    });
+
+    function checkReady() {
+      if (state.age && state.mood && state.color) {
+        btn.classList.add("enabled");
+        btn.style.cursor = "pointer";
+      }
+    }
+
+    btn.onclick = async () => {
+      if (!btn.classList.contains("enabled")) return;
+
+      btn.textContent = "Creating...";
+      output.classList.add("hidden");
+
+      try {
+        const res = await fetch("/.netlify/functions/generateStory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state)
+        });
+
+        const data = await res.json();
+        output.textContent = data.story;
+        output.classList.remove("hidden");
+      } catch (e) {
+        alert("Error generating story");
+      }
+
+      btn.textContent = "Create Story";
+    };
+  </script>
+</body>
+</html>
